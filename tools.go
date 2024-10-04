@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/fatih/color"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -12,7 +13,11 @@ import (
 )
 
 func Influx2Writer(serverURL string, token string, org string, bucket string) (client influxdb2.Client, writeAPI api.WriteAPI) {
-	client = influxdb2.NewClient(serverURL, token)
+	clientOptions := influxdb2.DefaultOptions().
+		SetPrecision(time.Microsecond). // second > millisecond > microsecond > nanosecond
+		SetLogLevel(1)
+
+	client = influxdb2.NewClientWithOptions(serverURL, token, clientOptions)
 	writeAPI = client.WriteAPI(org, bucket)
 	return
 }

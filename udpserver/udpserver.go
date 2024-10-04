@@ -1,16 +1,18 @@
 package udpserver
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 )
 
-var logger *log.Logger = log.New(os.Stdout, color.CyanString("UDPSERVER "), log.LstdFlags)
+var logger *log.Logger = log.New(os.Stdout, color.CyanString("UDPSERVER "), log.LstdFlags|log.Lmicroseconds)
 
 type UDPServer struct {
 	listenPort    int
@@ -47,7 +49,7 @@ func (u *UDPServer) Start() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		logger.Printf("Received %d bytes from %s: '%s'", n, addr, buffer[:n])
+		// logger.Printf("Received %d bytes from %s: '%s'", n, addr, buffer[:n])
 		// send response
 		udpConn.WriteToUDP([]byte("Received\n"), addr)
 		// we expect line protocol
@@ -59,8 +61,11 @@ func (u *UDPServer) Start() {
 				continue
 			}
 			// u.influx2Writer.WritePoint(line)
-			logger.Printf("received line: %s", line)
+			logger.Printf("received line from %s: %s", color.CyanString(addr.String()), color.BlueString(line))
+			// lets add microsecond from current time to the line
+			line = fmt.Sprintf("%s %d", line, time.Now().UnixMicro())
 			(*u.influx2Writer).WriteRecord(line)
+			logger.Printf("influx > %s", color.GreenString(line))
 		}
 	}
 }
